@@ -31,11 +31,12 @@ my $scr = Term::Screen->new() or die "error";
 
 &_upd_set_ndx();
 
+$SIG{'WINCH'} = sub { &_upd_set_ndx() }; # term resize event
 
-while(my $char = $scr->getch) {
+while(1) {
 
+  my $char = $scr->getch; # blocks
   
-
   if($fkeys{$char}) {
     &_upd_set_ndx($curNdx + 1);
   }
@@ -45,8 +46,9 @@ while(my $char = $scr->getch) {
   else {
     &_upd_set_ndx();
   }
-  
+
 }
+
 
 
 
@@ -61,9 +63,6 @@ sub _upd_set_ndx {
   $ndx = 0 if ($ndx < 0);
   
   &_set_ndx($ndx);
-  
-  
-  $curNdx = $ndx;
   
   $scr->clrscr();
   $scr->at(2,3);
