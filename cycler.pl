@@ -16,12 +16,10 @@ my @bkeys = ('ku','kl',"\b");           # Up, Left, Backspace
 
 # globals:
 my (
-  $repo_path, $git, $scr,
+  $repo_path, $branch, $git, $scr,
   $prevNdx,$curNdx,$lowNdx,$highNdx,
-  @list,
-  $max_len, 
-  $extra,
-  %fkeys, %bkeys
+  @list, $max_len, $extra, %fkeys, %bkeys,
+  $initialized
 );
 
 &_init();
@@ -50,6 +48,12 @@ while(1) {
   $scr->flush_input; # prevent key strokes from queueing up
 }
 
+END {
+  if($initialized) {
+    print "\r\n\ncleaning up...\r\n";
+    &_set_git_ref($branch);
+  }
+}
 
 
 
@@ -66,7 +70,7 @@ sub _init {
   $git = &_init_git_wrapper($repo_path);
   $scr = Term::Screen->new() or die "error";
   
-  my @tags = &_ordered_tags_from_ref();
+  my @tags = &_ordered_tags_from_ref($branch);
 
   @list  = map { $_->{tag} } @tags;
   $extra = { map { $_->{tag} => $_ } @tags };
@@ -77,6 +81,10 @@ sub _init {
   %fkeys = map {$_=>1} @fkeys;
   %bkeys = map {$_=>1} @bkeys;
 
+  # Make Ctrl-C, etc sigs call normal exit so END blocks are called
+  $SIG{$_} = sub { exit; } for (qw/INT TERM HUP QUIT ABRT/);
+
+  $initialized = 1;
 }
 
 sub _init_git_wrapper {
@@ -99,8 +107,9 @@ sub _init_git_wrapper {
     );
   }
   
-  
-  
+  ($branch) = $Git->RUN(qw/rev-parse --abbrev-ref HEAD/);
+  die "Target repo not currently on any branch\n" if ($branch eq 'HEAD');
+
   
   return $Git
 }
@@ -191,16 +200,21 @@ sub _set_ndx {
   $prevNdx = $curNdx;
   $curNdx  = $ndx;
   
-  
-  # Do other stuff on change
-  # ...
-  
+  &_set_git_ref($list[$ndx]);
   
 }
 
-sub _last_move_forward {
-
-
+sub _set_git_ref {
+  my $ref = shift;
+  
+  if ($git->status->is_dirty) {
+    $git->RUN(qw/reset --hard HEAD/);
+  };
+  
+  $git->RUN('checkout',$ref);
+  $git->RUN(qw/clean -d -f/);
+  $git->RUN(qw/reset --hard HEAD/);
+  
 }
 
 
