@@ -49,6 +49,8 @@ while(1) {
   else {
     &_upd_set_ndx();
   }
+  
+  $scr->flush_input; # prevent key strokes from queueing up
 }
 
 
@@ -147,8 +149,7 @@ sub _set_ndx {
   # Do other stuff on change
   # ...
   
-
-
+  
 }
 
 sub _last_move_forward {
