@@ -65,11 +65,11 @@ sub _upd_set_ndx {
   &_set_ndx($ndx);
   
   $scr->clrscr();
-  $scr->at(2,3);
+
+  $scr->at(1,3);
+  $scr->puts("Date-ordered, unique tags:");
   
-  $scr->puts("Ref list:");
-  
-  my $startRow = 4;
+  my $startRow = 3;
   my $i = 0;
   for my $itm (@list) {
     if ($i == $curNdx) {
@@ -90,7 +90,7 @@ sub _upd_set_ndx {
   }
   
   $scr->at($startRow + $i + 1,3);
-  $scr->puts(scalar(@list) . ' refs (use arrow keys to change ref): ');
+  $scr->puts("[Repo: $ARGV[0]]\r\n    -- " . scalar(@list) . ' refs (use arrow keys to change ref): ');
   
 }
 
