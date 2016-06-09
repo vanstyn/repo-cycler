@@ -5,6 +5,8 @@ use warnings;
 
 use Term::Screen;
 use Git::Wrapper;
+use Path::Class qw/file dir/;
+
 use RapidApp::Util ':all';
 
 my @fkeys = ('kd','kr',' ',"\r","\t");  # Down, Right, Space, Enter, Tab
@@ -12,22 +14,17 @@ my @bkeys = ('ku','kl',"\b");           # Up, Left, Backspace
 
 ##############
 
-my ($prevNdx,$curNdx,$lowNdx,$highNdx) = (0,0,0,0);
+# globals:
+my (
+  $repo_path, $git, $scr,
+  $prevNdx,$curNdx,$lowNdx,$highNdx,
+  @list,
+  $max_len, 
+  $extra,
+  %fkeys, %bkeys
+);
 
-my $git = Git::Wrapper->new($ARGV[0]);
-my $scr = Term::Screen->new() or die "error";
-
-my @tags = &_ordered_tags_from_ref();
-
-my @list  = map { $_->{tag} } @tags;
-my $extra = { map { $_->{tag} => $_ } @tags };
-
-my $max_len = 0;
-length($_) > $max_len and $max_len = length($_) for (@list);
-
-my %fkeys = map {$_=>1} @fkeys;
-my %bkeys = map {$_=>1} @bkeys;
-
+&_init();
 
 &_upd_set_ndx();
 
@@ -57,6 +54,31 @@ while(1) {
 
 
 ######################################
+
+
+sub _init {
+
+  $repo_path = dir($ARGV[0])->resolve->absolute->stringify;
+  die "Not a directory" unless (-d $repo_path);
+
+  ($prevNdx,$curNdx,$lowNdx,$highNdx) = (0,0,0,0);
+
+  $git = Git::Wrapper->new($repo_path);
+  $scr = Term::Screen->new() or die "error";
+  
+  my @tags = &_ordered_tags_from_ref();
+
+  @list  = map { $_->{tag} } @tags;
+  $extra = { map { $_->{tag} => $_ } @tags };
+
+  $max_len = 0;
+  length($_) > $max_len and $max_len = length($_) for (@list);
+
+  %fkeys = map {$_=>1} @fkeys;
+  %bkeys = map {$_=>1} @bkeys;
+
+}
+
 
 
 sub _upd_set_ndx {
@@ -104,11 +126,9 @@ sub _upd_set_ndx {
     @sublist = @list[$lowNdx..$highNdx];
   }
   
-
-  $scr->at(1,3);
-  $scr->puts("Date-ordered, unique tags:");
+  $scr->at(0,35)->puts("lowNdx: $lowNdx  highNdx: $highNdx  curNdx: $curNdx  maxLines: $maxLines");
   
-  $scr->puts("  lowNdx: $lowNdx  highNdx: $highNdx  curNdx: $curNdx  maxLines: $maxLines");
+  $scr->at(1,3)->puts("Date-ordered, unique tags:");
   
   my $startRow = 3;
   my $i = 0;
@@ -132,7 +152,7 @@ sub _upd_set_ndx {
   }
   
   $scr->at($startRow + $i + 1,3);
-  $scr->puts("[Repo: $ARGV[0]]\r\n    -- $count refs (use arrow keys to change ref): ");
+  $scr->puts("[Repo: $repo_path]\r\n    -- $count refs (use arrow keys to change ref): ");
   
 }
 
