@@ -63,7 +63,7 @@ sub _init {
 
   ($prevNdx,$curNdx,$lowNdx,$highNdx) = (0,0,0,0);
 
-  $git = Git::Wrapper->new($repo_path);
+  $git = &_init_git_wrapper($repo_path);
   $scr = Term::Screen->new() or die "error";
   
   my @tags = &_ordered_tags_from_ref();
@@ -77,6 +77,32 @@ sub _init {
   %fkeys = map {$_=>1} @fkeys;
   %bkeys = map {$_=>1} @bkeys;
 
+}
+
+sub _init_git_wrapper {
+  my $repo_path = shift;
+  
+  my $Git = Git::Wrapper->new($repo_path);
+  
+  my $Statuses = $Git->status;
+  
+  if ($Statuses->is_dirty) {
+    my @msgs = ();
+    for my $group (qw/indexed changed unknown conflict/) {
+      my @status = $Statuses->get($group);
+      my $cnt = scalar(@status) or next;
+      push @msgs, "$cnt items in '$group'";
+    }
+    die join('',
+      "Target repo is_dirty -- ",join(', ',@msgs),
+      "\n aborting...\n"
+    );
+  }
+  
+  
+  
+  
+  return $Git
 }
 
 
