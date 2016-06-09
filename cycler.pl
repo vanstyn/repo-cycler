@@ -4,23 +4,23 @@ use strict;
 use warnings;
 
 use Term::Screen;
+use Git::Wrapper;
+use RapidApp::Util ':all';
 
 my @fkeys = ('kd','kr',' ',"\r","\t");  # Down, Right, Space, Enter, Tab
 my @bkeys = ('ku','kl',"\b");           # Up, Left, Backspace
 
-my @list = qw/
-one
-two
-sdfsdf
-eee
-345dfg
-FGFG
-sdfhh
-some_ref_one
-fff
-/;
-
 ##############
+
+
+my $git = Git::Wrapper->new($ARGV[0]);
+my @tags = &_ordered_tags_from_ref();
+
+my @list  = map { $_->{tag} } @tags;
+my $extra = { map { $_->{tag} => $_ } @tags };
+
+my $max_len = 0;
+length($_) > $max_len and $max_len = length($_) for (@list);
 
 my %fkeys = map {$_=>1} @fkeys;
 my %bkeys = map {$_=>1} @bkeys;
@@ -77,6 +77,13 @@ sub _upd_set_ndx {
     }
     
     $scr->at($startRow + $i,7)->puts($itm);
+    
+    if(my $info = $extra->{$itm}) {
+      my $spaces = $max_len - length($itm);
+      $scr->puts(' ' x $spaces);
+      $scr->puts("  $info->{subject}");
+    
+    }
   
     $scr->normal;
     $i++;
@@ -103,4 +110,56 @@ sub _set_ndx {
 
 }
 
+
+sub _ordered_tags_from_ref {
+  my $ref = shift || 'master';
+  my $tags = &_tags_hash_from_ref($ref);
+  sort { $a->{epoch} <=> $b->{epoch} } values %$tags;
+}
+
+
+sub _tags_hash_from_ref {
+  my $ref = shift || 'master';
+  
+  my $commits = &_commit_hash_from_ref($ref);
+
+  my $tags = {};
+  my %seen_sha = ();
+  
+  for my $line ( $git->RUN("show-ref", '--tags') ) {
+    my ($sha1,$ref_path) = split(/\s+/,$line,2);
+    
+    my $commit = $commits->{$sha1} or next;
+    next if ($seen_sha{$sha1}++);
+
+    my $tag = (reverse split(/\//,$ref_path))[0];
+    
+    $tags->{$tag} = {
+      %$commit,
+      tag   => $tag,
+      sha1  => $sha1 
+    };
+  
+  }
+  
+  return $tags;
+}
+
+
+sub _commit_hash_from_ref {
+  my $ref = shift || 'master';
+  
+  my $commits = {};
+
+  for my $line ( $git->RUN("log", '--format=%H::%ct::%s', $ref) ) {
+    my ($sha1,$epoch,$subject) = split(/::/,$line,3);
+    
+    $commits->{$sha1} = {
+      epoch   => $epoch,
+      subject => $subject
+    };
+  }
+  
+  return $commits;
+}
 
