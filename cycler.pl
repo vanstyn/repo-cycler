@@ -7,8 +7,6 @@ use Term::Screen;
 use Git::Wrapper;
 use Path::Class qw/file dir/;
 
-use RapidApp::Util ':all';
-
 my @fkeys = ('kd','kr',' ',"\r","\t");  # Down, Right, Space, Enter, Tab
 my @bkeys = ('ku','kl',"\b");           # Up, Left, Backspace
 

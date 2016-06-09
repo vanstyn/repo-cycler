@@ -8,4 +8,16 @@ I wrote this is aid in live demos to be able to easily change between
 pre-defined code states of an example application. This was originally
 written for the YAPC::NA 2016 talk on RapidApp.
 
-code is not yet complete/working and is still in progress...
+## Usage:
+
+```bash
+# clone this repo:
+git clone https://github.com/vanstyn/repo-cycler
+cd repo-cycler/
+
+# install deps:
+cpanm --installdeps .
+
+# run on a repo:
+./cycler.pl /path/to/git/repo
+```
