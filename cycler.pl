@@ -22,7 +22,19 @@ my (
 
 &_init();
 
-&_upd_set_ndx();
+# only checkout to an ndx the target repo immediately if --start-ndx is supplied
+my $start_ndx = 0;
+if(defined $ARGV[2] && $ARGV[1] eq '--start-ndx') {
+  $start_ndx = $ARGV[2];
+  unless($start_ndx =~ /^\d+$/) {
+    $scr->clrscr();
+    die "Bad start-ndx value '$start_ndx'\n";
+  }
+  $curNdx = $start_ndx + 1;
+  &_upd_set_ndx($start_ndx);
+}
+
+&_upd_set_ndx($start_ndx);
 
 while(1) {
   local $SIG{'WINCH'} = sub { &_upd_set_ndx() }; # term resize event
