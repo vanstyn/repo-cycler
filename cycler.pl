@@ -217,6 +217,7 @@ sub _set_ndx {
 sub _set_git_ref {
   my $ref = shift;
   
+  $git->RUN(qw/clean -d -f/);
   if ($git->status->is_dirty) {
     $git->RUN(qw/reset --hard HEAD/);
   };
