@@ -20,6 +20,9 @@ my (
   $initialized
 );
 
+# Number of extra next lines to keep on-screen (by scrolling the list)
+my $scrollPad = 3;
+
 &_init();
 
 # only checkout to an ndx the target repo immediately if --start-ndx is supplied
@@ -125,7 +128,6 @@ sub _init_git_wrapper {
 }
 
 
-
 sub _upd_set_ndx {
   my $ndx = shift // $curNdx // 0;
   
@@ -153,15 +155,15 @@ sub _upd_set_ndx {
   
     $highNdx ||= $lastNdx;
     
-    if($ndx <= $lowNdx) {
-      $lowNdx = $ndx - 1;
+    if($ndx - $scrollPad <= $lowNdx) {
+      $lowNdx = $ndx - 1 - $scrollPad;
       $lowNdx = 0 if ($lowNdx < 0);
       $highNdx = $lowNdx + $maxLines;
       $highNdx = $lastNdx if ($highNdx > $lastNdx);
     }
     
-    if($ndx >= $highNdx) {
-      $highNdx = $ndx + 1;
+    if($ndx + $scrollPad >= $highNdx) {
+      $highNdx = $ndx + 1 + $scrollPad;
       $highNdx = $lastNdx if ($highNdx > $lastNdx);
       
       $lowNdx = $highNdx - $maxLines;
